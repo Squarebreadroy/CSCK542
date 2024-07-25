@@ -38,7 +38,7 @@ function authorize(roles) {
     };
 }
 
-// Route handlers
+// Admin - Assign course to teacher
 app.post('/assign-course', checkUserRole, authorize(['Admin']), async (req, res, next) => {
     const { teacherId, courseId } = req.body;
     if (!teacherId || !courseId) {
@@ -56,6 +56,7 @@ app.post('/assign-course', checkUserRole, authorize(['Admin']), async (req, res,
     }
 });
 
+// Admin - Change availability of course (course can only be available with assigned teacher)
 app.post('/courses-availability/:courseId', checkUserRole, authorize(['Admin']), async (req, res, next) => {
     const { courseId } = req.params;
     const { isAvailable } = req.body;
@@ -74,6 +75,7 @@ app.post('/courses-availability/:courseId', checkUserRole, authorize(['Admin']),
     }
 });
 
+// Teacher - update the mark of student (Only the assigned teacher can update the score)
 app.post('/update-status', checkUserRole, authorize(['Teacher']), async (req, res, next) => {
     const { UserId, studentId, mark, courseId } = req.body;
     if (!studentId || !mark || !courseId) {
@@ -95,6 +97,7 @@ app.post('/update-status', checkUserRole, authorize(['Teacher']), async (req, re
     }
 });
 
+// All User - Check the available course
 app.get('/courses', async (req, res, next) => {
     try {
         const [rows] = await db.execute('SELECT CourseID, Title, TeacherID FROM courses WHERE isAvailable = 1');
@@ -104,6 +107,7 @@ app.get('/courses', async (req, res, next) => {
     }
 });
 
+// Student - Enrol to course (Only available courses)
 app.post('/enrollments', checkUserRole, authorize(['Student']), async (req, res, next) => {
     const { UserId, courseId } = req.body;
     if (!courseId) {
@@ -128,7 +132,7 @@ app.post('/enrollments', checkUserRole, authorize(['Student']), async (req, res,
 
 // Testing endpoint with query parameter
 app.get('/', (req, res) => {
-    const { UserId } = req.query; // Changed to req.query
+    const { UserId } = req.query;
     res.status(200).json({ UserId });
 });
 
