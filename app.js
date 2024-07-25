@@ -102,7 +102,7 @@ app.post('/update-status', checkUserRole, authorize(['Teacher']), async (req, re
         next(error);
     }
 });
-app.get('/checkgrade', async (req, res, next) => {
+app.get('/checkgrade',checkUserRole, authorize(['Student']), async (req, res, next) => {
     const { UserId } = req.body;
     try {
         const [rows] = await db.execute('SELECT e.CourseID, c.Title, e.Mark FROM enrolments e LEFT JOIN courses c ON e.CourseID=c.CourseID WHERE e.UserID = ?', [UserId]);
