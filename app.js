@@ -38,25 +38,31 @@ function authorize(roles) {
     };
 }
 
-// Admin - Assign course to teacher
+// Route handlers
 app.post('/assign-course', checkUserRole, authorize(['Admin']), async (req, res, next) => {
     const { teacherId, courseId } = req.body;
     if (!teacherId || !courseId) {
         return next({ status: 400, message: 'teacherId and courseId are required' });
     }
     try {
+        // Check if the teacher exists and is authorized
         const [teacherRows] = await db.execute('SELECT * FROM users WHERE UserId = ? AND RoleID = (SELECT RoleID FROM roles WHERE Role = ?)', [teacherId, 'Teacher']);
         if (teacherRows.length === 0) {
             return next({ status: 404, message: 'Teacher not found or not authorized' });
         }
-        await db.execute('INSERT INTO enrolments (UserId, CourseID, Mark) VALUES (?, ?, ?)', [teacherId, courseId, -1]);
+
+        // Check if the enrolment already exists
+        const [existingEnrolment] = await db.execute('SELECT * FROM courses WHERE TeacherId = ? AND CourseID = ?', [teacherId, courseId]);
+        if (existingEnrolment.length > 0) {
+            return next({ status: 400, message: 'Assignement already exists' });
+        }
+        await db.execute('Update courses SET TeacherId = ? WHERE CourseId = ?', [teacherId, courseId]);
         res.status(201).json({ message: 'Course assigned to teacher' });
     } catch (error) {
         next(error);
     }
 });
 
-// Admin - Change availability of course (course can only be available with assigned teacher)
 app.post('/courses-availability/:courseId', checkUserRole, authorize(['Admin']), async (req, res, next) => {
     const { courseId } = req.params;
     const { isAvailable } = req.body;
@@ -75,13 +81,13 @@ app.post('/courses-availability/:courseId', checkUserRole, authorize(['Admin']),
     }
 });
 
-// Teacher - update the mark of student (Only the assigned teacher can update the score)
 app.post('/update-status', checkUserRole, authorize(['Teacher']), async (req, res, next) => {
     const { UserId, studentId, mark, courseId } = req.body;
     if (!studentId || !mark || !courseId) {
         return next({ status: 400, message: 'studentId, mark, and courseId are required' });
     }
     try {
+        // Check the teacher whether assigned to the course, and student whether enrolled to the course
         const [rows] = await db.execute('SELECT * FROM courses WHERE TeacherID = ? AND CourseID = ?', [UserId, courseId]);
         const [enrolled] = await db.execute('SELECT * FROM enrolments WHERE UserId = ? AND CourseID = ?', [studentId, courseId]);
         if (rows.length === 0) {
@@ -96,33 +102,42 @@ app.post('/update-status', checkUserRole, authorize(['Teacher']), async (req, re
         next(error);
     }
 });
-
-// All User - Check the available course
-app.get('/courses', async (req, res, next) => {
+app.get('/checkgrade', async (req, res, next) => {
+    const { UserId } = req.body;
     try {
-        const [rows] = await db.execute('SELECT CourseID, Title, TeacherID FROM courses WHERE isAvailable = 1');
+        const [rows] = await db.execute('SELECT e.CourseID, c.Title, e.Mark FROM enrolments e LEFT JOIN courses c ON e.CourseID=c.CourseID WHERE e.UserID = ?', [UserId]);
+        res.status(200).json(rows);        
+    } catch (error) {
+        next(error);
+    }
+})
+
+app.get('/available-courses', async (req, res, next) => {
+    try {
+        const [rows] = await db.execute('SELECT CourseID, Title, u.Name FROM courses c LEFT JOIN users u ON c.TeacherID=u.UserID WHERE isAvailable = 1');
         res.status(200).json(rows);
     } catch (error) {
         next(error);
     }
 });
 
-// Student - Enrol to course (Only available courses)
 app.post('/enrollments', checkUserRole, authorize(['Student']), async (req, res, next) => {
     const { UserId, courseId } = req.body;
     if (!courseId) {
         return next({ status: 400, message: 'courseId is required' });
     }
     try {
+        // Check the availablility of course
         const [course] = await db.execute('SELECT isAvailable FROM courses WHERE CourseID = ?', [courseId]);
         if (course.length === 0 || course[0].isAvailable === 0) {
             return next({ status: 400, message: 'Course is not available for enrollment' });
         }
+        // Check to avoid duplicate rows
         const [enrollment] = await db.execute('SELECT * FROM enrolments WHERE CourseID = ? AND UserId = ?', [courseId, UserId]);
         if (enrollment.length > 0) {
             return next({ status: 400, message: 'Already enrolled in this course' });
         } else {
-            await db.execute('INSERT INTO enrolments (CourseID, UserId) VALUES (?, ?)', [courseId, UserId]);
+            await db.execute('INSERT INTO enrolments (UserId, CourseID, Mark) VALUES (?, ?, ?)', [teacherId, courseId, -1]);
             res.status(201).json({ message: 'Successfully enrolled in course' });
         }
     } catch (error) {
@@ -132,7 +147,7 @@ app.post('/enrollments', checkUserRole, authorize(['Student']), async (req, res,
 
 // Testing endpoint with query parameter
 app.get('/', (req, res) => {
-    const { UserId } = req.query;
+    const { UserId } = req.query; // Changed to req.query
     res.status(200).json({ UserId });
 });
 
