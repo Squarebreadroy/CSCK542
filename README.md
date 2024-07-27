@@ -21,39 +21,7 @@ Getting Started
 Prerequisites
 Node.js installed on your machine
 MySQL database set up
-Installation
-Clone the repository:
 
-bash
-複製程式碼
-git clone https://github.com/yourusername/college-course-management-api.git
-Install dependencies:
-
-bash
-複製程式碼
-cd college-course-management-api
-npm install
-Set up the MySQL database and update the database configuration in db.js:
-
-javascript
-複製程式碼
-const mysql = require('mysql2/promise');
-
-const db = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: 'yourpassword',
-    database: 'yourdatabase'
-});
-
-module.exports = db;
-Running the Application
-Start the server:
-
-bash
-複製程式碼
-npm start
-The API will be running on http://localhost:3000
 
 API Endpoints
 Admin Endpoints
