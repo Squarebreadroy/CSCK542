@@ -26,40 +26,52 @@ Prerequisites
 - MySQL database set up
 
 
-## API Endpoints
-Admin Endpoints
+# API Endpoints
 
+Admin Endpoints
 ### Assign Course to Teacher
 POST /assign-course
+
 Request Body: { "teacherId": "1", "courseId": "101" }
+
 Response: 201 Created with message
 
 ### Manage Course Availability
 POST /courses-availability/:courseId
-Request Body: { "isAvailable": true }
-Response: 200 OK with message
-Teacher Endpoints
 
+Request Body: { "isAvailable": true }
+
+Response: 200 OK with message
+
+## Teacher Endpoints
 ### Update Student Grade
 POST /update-status
-Request Body: { "UserId": "2", "studentId": "3", "mark": "90", "courseId": "101" }
-Response: 200 OK with message
-Student Endpoints
 
+Request Body: { "UserId": "2", "studentId": "3", "mark": "90", "courseId": "101" }
+
+Response: 200 OK with message
+
+## Student Endpoints
 ### Enroll in a Course
 POST /enrollments
-Request Body: { "UserId": "3", "courseId": "101" }
+
+Request Body: { "UserId": "3", "courseId": "101" } 
+
 Response: 201 Created with message
 
 ### Check Grades
 GET /checkgrade
-Request Body: { "UserId": "3" }
+
+Request Body: { "UserId": "3" } 
+
 Response: 200 OK with grades
 
 ## General Endpoints
 ### Get Available Courses
 GET /available-courses
+
 Response: 200 OK with course list
+
 
 ## Error Handling
 Errors are handled centrally using an error handler middleware. The middleware catches all errors and sends a structured response with appropriate status codes and messages.
