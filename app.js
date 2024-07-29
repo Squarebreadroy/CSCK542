@@ -137,7 +137,7 @@ app.post('/enrollments', checkUserRole, authorize(['Student']), async (req, res,
         if (enrollment.length > 0) {
             return next({ status: 400, message: 'Already enrolled in this course' });
         } else {
-            await db.execute('INSERT INTO enrolments (UserId, CourseID, Mark) VALUES (?, ?, ?)', [teacherId, courseId, -1]);
+            await db.execute('INSERT INTO enrolments (UserId, CourseID, Mark) VALUES (?, ?, ?)', [UserId, courseId, -1]);
             res.status(201).json({ message: 'Successfully enrolled in course' });
         }
     } catch (error) {
